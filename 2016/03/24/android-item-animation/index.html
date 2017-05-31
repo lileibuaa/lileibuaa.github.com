@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>快速定制简单的Item Animation | lileibuaa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Item Animation的基本原理我们都知道，给RecyclerView添加Item Animation的方法是setItemAnimator(ItemAnimator animator)。因此我们可以以抽象类ItemAnimator为切入点，看看Recyclerview的Item Animation是怎样实现的。">
+<meta name="keywords" content="android,animation">
+<meta property="og:type" content="article">
+<meta property="og:title" content="快速定制简单的Item Animation">
+<meta property="og:url" content="http://lileibuaa.github.com/2016/03/24/android-item-animation/index.html">
+<meta property="og:site_name" content="lileibuaa">
+<meta property="og:description" content="Item Animation的基本原理我们都知道，给RecyclerView添加Item Animation的方法是setItemAnimator(ItemAnimator animator)。因此我们可以以抽象类ItemAnimator为切入点，看看Recyclerview的Item Animation是怎样实现的。">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/289461-7b20ae37379c1199.gif?imageMogr2/auto-orient/strip">
+<meta property="og:updated_time" content="2017-05-31T08:39:24.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="快速定制简单的Item Animation">
+<meta name="twitter:description" content="Item Animation的基本原理我们都知道，给RecyclerView添加Item Animation的方法是setItemAnimator(ItemAnimator animator)。因此我们可以以抽象类ItemAnimator为切入点，看看Recyclerview的Item Animation是怎样实现的。">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/289461-7b20ae37379c1199.gif?imageMogr2/auto-orient/strip">
+  
+    <link rel="alternate" href="/atom.xml" title="lileibuaa" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    
+    <div id="header-inner" class="inner">
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://lileibuaa.github.com"></form>
+      </div>
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">首页</a>
+        
+          <a class="main-nav-link" href="/archives">归档</a>
+        
+          <a class="main-nav-link" href="/about">关于</a>
+        
+      </nav>
+      
+    </div>
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">lileibuaa</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Hey, you can.</a>
+        </h2>
+      
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-android-item-animation" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/03/24/android-item-animation/" class="article-date">
+  <time datetime="2016-03-24T07:09:23.000Z" itemprop="datePublished">2016-03-24</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      快速定制简单的Item Animation
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <!-- Table of Contents -->
+        
+        <h2 id="Item-Animation的基本原理"><a href="#Item-Animation的基本原理" class="headerlink" title="Item Animation的基本原理"></a>Item Animation的基本原理</h2><p>我们都知道，给<code>RecyclerView</code>添加Item Animation的方法是<code>setItemAnimator(ItemAnimator animator)</code>。因此我们可以以抽象类<code>ItemAnimator</code>为切入点，看看<code>Recyclerview</code>的Item Animation是怎样实现的。<br><a id="more"></a><br> 首先列举一下<code>ItemAnimator</code>中几个比较重要的方法签名：</p>
+<ol>
+<li><ul>
+<li><code>public ItemHolderInfo recordPreLayoutInformation(State state,ViewHolder viewHolder,int changeFlags,List&lt;Object&gt; payloads)</code></li>
+<li><code>public ItemHolderInfo recordPostLayoutInformation(State state, ViewHolder viewHolder)</code></li>
+</ul>
+<p>这两个方法是成对出现的，分别用于记录同一个ViewHolder在layout执行前后view位置等信息，分别对应了动画开始前的view状态和动画结束后的view状态。</p>
+</li>
+<li><ul>
+<li><code>public abstract boolean animateDisappearance(ViewHolder viewHolder, ItemHolderInfo preLayoutInfo, ItemHolderInfo postLayoutInfo)</code></li>
+<li><code>public abstract boolean animateAppearance(ViewHolder viewHolder, ItemHolderInfo preLayoutInfo, ItemHolderInfo postLayoutInfo)</code></li>
+<li><code>public abstract boolean animatePersistence(ViewHolder viewHolder, ItemHolderInfo preLayoutInfo, ItemHolderInfo postLayoutInfo)</code></li>
+<li><code>public abstract boolean animateChange(ViewHolder oldHolder, ViewHolder newHolder,
+ItemHolderInfo preLayoutInfo, ItemHolderInfo postLayoutInfo)</code></li>
+</ul>
+<p>这四个方法都是由<code>RecyclerView</code>调用，调用时机分别为在执行layout过程之后<code>viewHolder</code>从<code>RecyclerView</code>中移除（从有到无）、出现（从无到有）、不变（同一个<code>viewHolder</code>但是尺寸、位置可能发生变化）、改变（从<code>oldHolder</code>变为<code>newHolder</code>，<code>viewHolder</code>发生了变化）。</p>
+<p>这四个方法中都包含<code>preLayoutInfo</code>和<code>postLayoutInfo</code>，这两个参数就是由前面<code>recordPreLayoutInformation</code>和<code>recordPostLayoutInformation</code>方法计算出来的<code>viewHolder</code>信息。我们就可以根据<code>viewHolder</code>的初态（<code>preLayoutInfo</code>）和终态（<code>postLayoutInfo</code>）实现自定义的动画。但是动画并不是在这个方法中启动，在这四个方法中我们仅仅是根据<code>preLayoutInfo</code>和<code>postLayoutInfo</code>判断是否需要动画和需要什么动画。如果不需要执行动画，就必须在这四个方法中调用<code>dispatchAnimationFinished(ViewHolder)</code>方法并且最后的return值必须为<code>false</code>；反之如果需要执行动画return值就必须为<code>true</code>，之后系统就会调用<code>runPendingAnimations()</code>方法，并在<code>runPendingAnimations()</code>中启动各种动画，在动画执行完毕后也必须要调用<code>dispatchAnimationFinished(ViewHolder)</code>方法。</p>
+</li>
+<li><p><code>abstract public void runPendingAnimations()</code></p>
+<p>如果上面四个方法中有一个的返回值是<code>true</code>，在下一帧的时候就会执行此方法，所有的动画都可以在此方法中启动。</p>
+</li>
+<li><ul>
+<li><code>abstract public void endAnimation(ViewHolder item)</code></li>
+<li><code>abstract public void endAnimations()</code><br>结束动画，并确保各个viewHolder都处于最终态。</li>
+</ul>
+</li>
+</ol>
+<p>到此为止，我们可以缕一下整个过程。</p>
+<p>首先<code>RecyclerView</code>在执行layout前后会调用<code>recordPreLayoutInformation</code>和<code>recordPostLayoutInformation</code>方法，并保存layout前后<code>viewHodler</code>的位置等信息；然后根据layout的情况执行<code>animateXXX</code>方法，我们在<code>animateXXX</code>方法中决定是否执行动画和执行何种动画；如果需要执行动画，则可以在<code>runPendingAnimations</code>方法中启动动画；最后在<code>endAnimation</code>和<code>endAnimations</code>方法中确保<code>viewHolder</code>处于最终态。</p>
+<h2 id="快速实现自定义Item-Animation"><a href="#快速实现自定义Item-Animation" class="headerlink" title="快速实现自定义Item Animation"></a>快速实现自定义Item Animation</h2><p>问当今如何code最快，那必然是ctrl-C加上ctrl-V。（开个玩笑~~~）</p>
+<p>不过现在讲的是如何快速的自定义Item Animation，基于学习的目的，那当然还是需要copy一些代码的嘛。至于以后项目中需要或者兴趣使然要深入自定义Item Animation就需要自己参照原有实现进行封装了。</p>
+<p>废话不多说，下面进入正题！！！</p>
+<p>android support v7包里已经包含了一个Item Animation的默认实现：<code>android.support.v7.widget.DefaultItemAnimator</code>，<code>DefaultItemAnimator</code>继承了<code>SimpleItemAnimator</code>，而<code>SimpleItemAnimator又继承了RecyclerView.ItemAnimator</code>。<code>DefaultItemAnimator</code>实现了在添加、移除item时View的透明度发生变化，在移动item时view的位置发生变化。我们要做的仅仅是对<code>DefaultItemAnimator</code>进行局部的修改~~~</p>
+<p><code>recordPreLayoutInformation和recordPostLayoutInformation</code>在<code>ItemAnimator</code>中已经实现，<code>animateDisappearance</code>、<code>animateAppearance</code>、<code>animatePersistence</code>和<code>animateChange</code>在<code>SimpleItemAnimator</code>中也已实现，<code>runPendingAnimations</code>在<code>DefaultItemAnimator</code>中已经实现，我们用这些默认实现就可以了。以添加Item动画为例，我们只要修改如下3个地方就可以实现Item旋转进入动画（仅列出部分关键代码，注释为原代码，////中间为修改后的代码）：</p>
+<ol>
+<li><p>设置动画的初始值，将view设置为旋转180度</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Override</span></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">animateAdd</span><span class="params">(<span class="keyword">final</span> ViewHolder holder)</span> </span>&#123;</div><div class="line">    resetAnimation(holder);</div><div class="line">  	<span class="comment">/**ViewCompat.setAlpha(holder.itemView, 0);**/</span></div><div class="line">  	ViewCompat.setRotation(holder.itemView, <span class="number">180</span>);</div><div class="line">    mPendingAdditions.add(holder);</div><div class="line">    <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>启动动画，让view再转180度。并在动画取消时将view设置为终态，也就是旋转0度</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">animateAddImpl</span><span class="params">(<span class="keyword">final</span> RecyclerView.ViewHolder holder)</span> </span>&#123;</div><div class="line">      ...</div><div class="line">      <span class="comment">/**animation.alpha(1)**/</span></div><div class="line">      animation.rotationBy(<span class="number">180</span>)</div><div class="line">			.setDuration(getAddDuration()).</div><div class="line">              setListener(<span class="keyword">new</span> VpaListenerAdapter() &#123;</div><div class="line">              	...</div><div class="line">                  <span class="meta">@Override</span></div><div class="line">                  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationCancel</span><span class="params">(View view)</span> </span>&#123;</div><div class="line">                      <span class="comment">/**ViewCompat.setAlpha(view, 1);**/</span></div><div class="line">                      ViewCompat.setRotation(view, <span class="number">0</span>);</div><div class="line">                  &#125;</div><div class="line">                  ...</div><div class="line">              &#125;).start();</div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>结束动画，确保view在动画结束或者取消后能回到终态，也就是旋转0度。(这里省略了endAnimations()方法的修改)</p>
+ <figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Override</span></div><div class="line"> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">endAnimation</span><span class="params">(RecyclerView.ViewHolder item)</span> </span>&#123;</div><div class="line">     ...</div><div class="line">     <span class="keyword">if</span> (mPendingAdditions.remove(item)) &#123;</div><div class="line">         <span class="comment">/**ViewCompat.setAlpha(view, 1);**/</span></div><div class="line">         ViewCompat.setRotation(view, <span class="number">0</span>);</div><div class="line">         dispatchAddFinished(item);</div><div class="line">     &#125;</div><div class="line">...</div><div class="line">     <span class="keyword">for</span> (<span class="keyword">int</span> i = mAdditionsList.size() - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</div><div class="line">         ArrayList&lt;RecyclerView.ViewHolder&gt; additions = mAdditionsList.get(i);</div><div class="line">         <span class="keyword">if</span> (additions.remove(item)) &#123;</div><div class="line">             <span class="comment">/**ViewCompat.setAlpha(view, 1);**/</span></div><div class="line">             ViewCompat.setRotation(view, <span class="number">0</span>);</div><div class="line">             dispatchAddFinished(item);</div><div class="line">             <span class="keyword">if</span> (additions.isEmpty()) &#123;</div><div class="line">                 mAdditionsList.remove(i);</div><div class="line">             &#125;</div><div class="line">         &#125;</div><div class="line">     &#125;</div><div class="line">     ...</div><div class="line"> &#125;</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>通过以上3步，我们就是实现了Item旋转进入的动画，以下是演示效果。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/289461-7b20ae37379c1199.gif?imageMogr2/auto-orient/strip" alt="Demo 演示效果"></p>
+<blockquote>
+<p><a href="https://github.com/lileibuaa/CustomItemAnimator" target="_blank" rel="external">Demo地址</a></p>
+</blockquote>
+<p><strong>再次强调，以上步骤仅适用于学习。在项目中使用还需自己参照实现自己想要的效果。</strong></p>
+<p>PS：顺带说下如何解决调用<code>notifyDataSetChanged</code>后，没有触发Item Animation的问题。。</p>
+<p>要想在调用<code>notifyDataSetChanged</code>之后触发Item Animation，必须要在自定义adapter中调用方法<code>setHasStableIds(true)</code>;并实现<code>public long getItemId(int position)</code>方法返回各Item的id。。至于为啥，留待以后再探究吧。。。请原谅我这个拖延症重度患者。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://lileibuaa.github.com/2016/03/24/android-item-animation/" data-id="cj3crs6te0007ets6kplxeqcp" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/">android</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/animation/">animation</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/05/31/git-command/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">上一篇</strong>
+      <div class="article-nav-title">
+        
+          git命令解析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/03/11/android-CoordinatorLayout-1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">下一篇</strong>
+      <div class="article-nav-title">【译】Nested Scrolling With CoordinatorLayout On Android</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+ 
+     
+  <div class="comments" id="comments">
+    
+     
+       
+      <div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div>
+    
+  </div>
+ 
+  
+
+</section>
+           
+    <aside id="sidebar">
+  
+    
+
+  
+    
+    <div class="widget-wrap">
+    
+      <div class="widget" id="toc-widget-fixed">
+      
+        <strong class="toc-title">文章目录</strong>
+        <div class="toc-widget-list">
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Item-Animation的基本原理"><span class="toc-number">1.</span> <span class="toc-text">Item Animation的基本原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#快速实现自定义Item-Animation"><span class="toc-number">2.</span> <span class="toc-text">快速实现自定义Item Animation</span></a></li></ol>
+          </div>
+      </div>
+    </div>
+
+  
+    
+
+  
+    
+  
+    
+  
+    
+
+  
+    
+  
+</aside>
+
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-left">
+      &copy; 2014 - 2017 Lei Li&nbsp;|&nbsp;
+      主题 <a href="https://github.com/giscafer/hexo-theme-cafe/" target="_blank">Cafe</a>
+    </div>
+     <div id="footer-right">
+      联系方式&nbsp;|&nbsp;lileibh@gmail.com
+    </div>
+  </div>
+</footer>
+ <script src="/jquery/jquery.min.js"></script>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">首页</a>
+  
+    <a href="/archives" class="mobile-nav-link">归档</a>
+  
+    <a href="/about" class="mobile-nav-link">关于</a>
+  
+</nav>
+    <img class="back-to-top-btn" src="/images/fly-to-top.png"/>
+<script>
+// Elevator script included on the page, already.
+window.onload = function() {
+  var elevator = new Elevator({
+    selector:'.back-to-top-btn',
+    element: document.querySelector('.back-to-top-btn'),
+    duration: 1000 // milliseconds
+  });
+}
+</script>
+      
+
+  
+    <script>
+      var cloudTieConfig = {
+        url: document.location.href, 
+        sourceId: "",
+        productKey: "e2fb4051c49842xxce669e634bc983f",
+        target: "cloud-tie-wrapper"
+      };
+    </script>
+    <script src="https://img1.ws.126.net/f2e/tie/yun/sdk/loader.js"></script>
+    
+
+  
+
+
+
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      })
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      })
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+ <script src="/js/is.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+<script src="/js/elevator.js"></script>
+  </div>
+</body>
+</html>

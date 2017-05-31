@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>【译】Nested Scrolling With CoordinatorLayout On Android | lileibuaa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="此篇blog为译文，原文点击这里  在上一篇blog中我们简要介绍了CoordinatorLayout和自定义Behaviour。评论中有些人询问怎样编写一个可以和CoordinatorLayout还有AppBarLayout协同工作的scroll view。也有些读者好奇为什么AppBarLayout可以和RecyclerView一起工作而和ListView却不行。">
+<meta name="keywords" content="android,translate">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【译】Nested Scrolling With CoordinatorLayout On Android">
+<meta property="og:url" content="http://lileibuaa.github.com/2016/03/11/android-CoordinatorLayout-1/index.html">
+<meta property="og:site_name" content="lileibuaa">
+<meta property="og:description" content="此篇blog为译文，原文点击这里  在上一篇blog中我们简要介绍了CoordinatorLayout和自定义Behaviour。评论中有些人询问怎样编写一个可以和CoordinatorLayout还有AppBarLayout协同工作的scroll view。也有些读者好奇为什么AppBarLayout可以和RecyclerView一起工作而和ListView却不行。">
+<meta property="og:image" content="https://lab.getbase.com/wp-content/uploads/2015/10/demo3-1.gif">
+<meta property="og:image" content="https://lab.getbase.com/wp-content/uploads/2015/10/demo.gif">
+<meta property="og:updated_time" content="2017-05-31T09:07:58.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="【译】Nested Scrolling With CoordinatorLayout On Android">
+<meta name="twitter:description" content="此篇blog为译文，原文点击这里  在上一篇blog中我们简要介绍了CoordinatorLayout和自定义Behaviour。评论中有些人询问怎样编写一个可以和CoordinatorLayout还有AppBarLayout协同工作的scroll view。也有些读者好奇为什么AppBarLayout可以和RecyclerView一起工作而和ListView却不行。">
+<meta name="twitter:image" content="https://lab.getbase.com/wp-content/uploads/2015/10/demo3-1.gif">
+  
+    <link rel="alternate" href="/atom.xml" title="lileibuaa" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    
+    <div id="header-inner" class="inner">
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://lileibuaa.github.com"></form>
+      </div>
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">首页</a>
+        
+          <a class="main-nav-link" href="/archives">归档</a>
+        
+          <a class="main-nav-link" href="/about">关于</a>
+        
+      </nav>
+      
+    </div>
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">lileibuaa</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Hey, you can.</a>
+        </h2>
+      
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-android-CoordinatorLayout-1" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/03/11/android-CoordinatorLayout-1/" class="article-date">
+  <time datetime="2016-03-11T07:09:23.000Z" itemprop="datePublished">2016-03-11</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      【译】Nested Scrolling With CoordinatorLayout On Android
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <!-- Table of Contents -->
+        
+        <p><strong>此篇blog为译文，<a href="https://lab.getbase.com/nested-scrolling-with-coordinatorlayout-on-android/" target="_blank" rel="external">原文点击这里</a></strong></p>
+<p> 在上一篇<a href="http://www.jianshu.com/p/0e20aadf8415" target="_blank" rel="external">blog</a>中我们简要介绍了<code>CoordinatorLayout</code>和自定义<code>Behaviour</code>。评论中有些人询问怎样编写一个可以和<code>CoordinatorLayout</code>还有<code>AppBarLayout</code>协同工作的scroll view。也有些读者好奇为什么<code>AppBarLayout</code>可以和<code>RecyclerView</code>一起工作而和<code>ListView</code>却不行。</p>
+  <a id="more"></a>
+<p> 我们先来看看<code>AppBarLayout</code>随着<code>RecyclerView</code>上下滚动而消失和显示的效果吧。</p>
+<p> <img src="https://lab.getbase.com/wp-content/uploads/2015/10/demo3-1.gif" alt=""></p>
+<h2 id="源代码"><a href="#源代码" class="headerlink" title="源代码"></a>源代码</h2><p> 查看<code>AppBarLayout</code>的源码可以发现，AppBarLayout定义了default Behaviour<code>@DefaultBehavior(AppBarLayout.Behavior.class)</code><br> <code>AppBarLayout.Behavior</code>实现了下列和scroll事件相关的方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span>    <span class="title">onNestedPreScroll</span><span class="params">(CoordinatorLayout coordinatorLayout, V child, View target, <span class="keyword">int</span> dx, <span class="keyword">int</span> dy, <span class="keyword">int</span>[] consumed)</span></span></div><div class="line"><span class="keyword">void</span>    <span class="title">onNestedScroll</span><span class="params">(CoordinatorLayout coordinatorLayout, V child, View target, <span class="keyword">int</span> dxConsumed, <span class="keyword">int</span> dyConsumed, <span class="keyword">int</span> dxUnconsumed, <span class="keyword">int</span> dyUnconsumed)</span></div><div class="line"><span class="keyword">void</span>    <span class="title">onNestedScrollAccepted</span><span class="params">(CoordinatorLayout coordinatorLayout, V child, View directTargetChild, View target, <span class="keyword">int</span> nestedScrollAxes)</span></div><div class="line"><span class="keyword">boolean</span> <span class="title">onStartNestedScroll</span><span class="params">(CoordinatorLayout coordinatorLayout, V child, View directTargetChild, View target, <span class="keyword">int</span> nestedScrollAxes)</span></div><div class="line"><span class="keyword">void</span>    <span class="title">onStopNestedScroll</span><span class="params">(CoordinatorLayout coordinatorLayout, V child, View target)</span></div></pre></td></tr></table></figure>
+<p> 这就解释了为什么<code>AppBarLayout</code>被放在<code>CoordinatorLayout</code>里面就能够移动自己的位置。那么问题来了，<code>CoordinatorLayout</code>是怎么知道子view发生滚动了的呢。</p>
+<h2 id="瞅瞅NestedScrollingChild和NestedScrollingParent吧"><a href="#瞅瞅NestedScrollingChild和NestedScrollingParent吧" class="headerlink" title="瞅瞅NestedScrollingChild和NestedScrollingParent吧"></a>瞅瞅NestedScrollingChild和NestedScrollingParent吧</h2><p> 查看源码发现<code>RecyclerView</code>实现了<code>NestedScrollingChild</code>接口。让我们看看文档咋说的：</p>
+<blockquote>
+<p>This interface should be implemented by View subclasses that wish to support dispatching nested scrolling operations to a cooperating parent ViewGroup.</p>
+</blockquote>
+<p> 翻译一下吧：需要发送nested scrolling操作给父view的子view需要实现该接口。</p>
+<p> <code>CoordinatorLayout</code>处理子view发送的nested scrolling操作，所以实现了<code>NestedScrollingParent</code>接口。文档解释如下：</p>
+<blockquote>
+<p>This interface should be implemented by ViewGroup subclasses that wish to support scrolling operations delegated by a nested child view.</p>
+</blockquote>
+<p> 翻译一下：需要处理子view委派的scroll操作的viewgroup都应该实现该接口</p>
+<p> 接下来让我们深入看看<code>NestedScrollingChild</code>和<code>NestedScrollingParent</code>之间是如何交流协作的。</p>
+<p> 当child开始开始滚动的时候，会调用<code>startNestedScroll</code>方法。接着在每一次执行<code>onScroll</code>的时候都会调用<code>dispatchNestedPreScroll</code>和<code>dispatchNestedScroll</code>方法。<code>dispatchNestedPreScroll</code>给父view提供了消耗部分或者全部滚动操作的机会，如果该方法返回true则子view必须在执行滚动操作的时候减去父view消耗的部分。而<code>dispatchNestedScroll</code>方法用于向父view报告自身的滚动情况，包括自身消耗的部分和未消耗的部分。父view对这两个值的处理也可能会有所不同：</p>
+<blockquote>
+<p>An implementation may choose to use the consumed portion to match or chase scroll position of multiple child elements, for example. The unconsumed portion may be used to allow continuous dragging of multiple scrolling or draggable elements, such as scrolling a list within a vertical drawer where the drawer begins dragging once the edge of inner scrolling content is reached.</p>
+</blockquote>
+<p> 翻译一下：例如在有的viewgroup中会根据子view消耗的部分来对齐或者追踪其他子view的滚动位置。而没有消耗的部分可能会被嵌套scroll或者可拖动view消耗，比如，在一个drawer里面滚动list，当list已经滚动到边缘了用户还在继续滑动操作，此时就能拖动drawer了。</p>
+<p> <code>CoordinatorLayout</code>就像是一个代理，接收子view的回调，并传递给其他子view的<code>Behavior</code>对象。<br> 当滑动结束的时候，子view会调用<code>stopNestedScroll</code>方法。</p>
+<h2 id="自定义NestedScrollingChild-View"><a href="#自定义NestedScrollingChild-View" class="headerlink" title="自定义NestedScrollingChild View"></a>自定义NestedScrollingChild View</h2><p> 我们已经知道原理了，下一步就该实现一个简单的<code>NestedScrollingChild</code>对象来监控scroll事件并委托给<code>CoordinatorLayout</code>对象处理。</p>
+<ul>
+<li>让我们从自定义view开始</li>
+</ul>
+<p><code>public class NestedScrollingChildView extends View implements NestedScrollingChild, OnGestureListener</code></p>
+<p> 为了让我们的开发更为简单，谷歌引入了<code>NestedScrollingChildHelper</code>：</p>
+<blockquote>
+<p>Helper class for implementing nested scrolling child views compatible with Android platform versions earlier than Android 5.0 Lollipop (API 21).</p>
+</blockquote>
+<p> 我们需要做的仅仅是创建helper对象并将各个事件委托给helper处理。</p>
+<p> 在默认情况下nested scroll是disabled状态，所以需要在构造函数中开启该功能</p>
+<p> <code>setNestedScrollingEnabled(true);</code></p>
+<ul>
+<li><p>接着我们需要监测scroll事件，为了方便我们直接使用<code>GestureDetectorCompat</code>实例就行了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"> <span class="meta">@Override</span></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onTouchEvent</span><span class="params">(MotionEvent event)</span></span>&#123;</div><div class="line">  <span class="keyword">return</span> mDetector.onTouchEvent(event);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>然后在<code>onDown</code>方法里，我们需要调用<code>startNestedScroll</code>方法并将垂直滚动标记作为参数传进去。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Override</span></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onDown</span><span class="params">(MotionEvent e)</span> </span>&#123;</div><div class="line">  startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL);</div><div class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>然后是在<code>onScroll</code>方法中调用<code>dispatchNestedPreScroll</code>方法并传入计算所得的Y轴滚动距离；然后继续调用<code>dispatchNestedScroll</code>方法，由于我们的view压根不会滚动所以参数都传0就可以了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"> <span class="meta">@Override</span></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onScroll</span><span class="params">(MotionEvent e1, MotionEvent e2, <span class="keyword">float</span> distanceX, <span class="keyword">float</span> distanceY)</span> </span>&#123;</div><div class="line">  dispatchNestedPreScroll(<span class="number">0</span>, (<span class="keyword">int</span>) distanceY, <span class="keyword">null</span>, <span class="keyword">null</span>);</div><div class="line">  dispatchNestedScroll(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="keyword">null</span>);</div><div class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>最后一步就是调用<code>stopNestedScroll</code>了。因为<code>GestureDetectorCompat</code>并没有提供合适的回调，所以我们必须自己在<code>onTouchEvent</code>方法中调用<code>stopNestedScroll</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"> <span class="meta">@Override</span></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onTouchEvent</span><span class="params">(MotionEvent event)</span></span>&#123;</div><div class="line">  <span class="keyword">final</span> <span class="keyword">boolean</span> handled = mDetector.onTouchEvent(event);</div><div class="line">  <span class="keyword">if</span> (!handled &amp;&amp; event.getAction() == MotionEvent.ACTION_UP) &#123;</div><div class="line">    stopNestedScroll();</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>为了简单，咱就没有去处理fling的情况了。</p>
+<p>来吧，看看效果吧。</p>
+<p><img src="https://lab.getbase.com/wp-content/uploads/2015/10/demo.gif" alt=""></p>
+<p>恩，文中所有的代码都在<a href="https://github.com/ggajews/nestedscrollingchildviewdemo" target="_blank" rel="external">https://github.com/ggajews/nestedscrollingchildviewdemo</a></p>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://lileibuaa.github.com/2016/03/11/android-CoordinatorLayout-1/" data-id="cj3crs6s50000ets6zfidfq17" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/">android</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/translate/">translate</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/03/24/android-item-animation/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">上一篇</strong>
+      <div class="article-nav-title">
+        
+          快速定制简单的Item Animation
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/03/11/android-CoordinatorLayout-0/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">下一篇</strong>
+      <div class="article-nav-title">【译】Android CoordinatorLayout 简介</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+ 
+     
+  <div class="comments" id="comments">
+    
+     
+       
+      <div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div>
+    
+  </div>
+ 
+  
+
+</section>
+           
+    <aside id="sidebar">
+  
+    
+
+  
+    
+    <div class="widget-wrap">
+    
+      <div class="widget" id="toc-widget-fixed">
+      
+        <strong class="toc-title">文章目录</strong>
+        <div class="toc-widget-list">
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#源代码"><span class="toc-number">1.</span> <span class="toc-text">源代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#瞅瞅NestedScrollingChild和NestedScrollingParent吧"><span class="toc-number">2.</span> <span class="toc-text">瞅瞅NestedScrollingChild和NestedScrollingParent吧</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#自定义NestedScrollingChild-View"><span class="toc-number">3.</span> <span class="toc-text">自定义NestedScrollingChild View</span></a></li></ol>
+          </div>
+      </div>
+    </div>
+
+  
+    
+
+  
+    
+  
+    
+  
+    
+
+  
+    
+  
+</aside>
+
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-left">
+      &copy; 2014 - 2017 Lei Li&nbsp;|&nbsp;
+      主题 <a href="https://github.com/giscafer/hexo-theme-cafe/" target="_blank">Cafe</a>
+    </div>
+     <div id="footer-right">
+      联系方式&nbsp;|&nbsp;lileibh@gmail.com
+    </div>
+  </div>
+</footer>
+ <script src="/jquery/jquery.min.js"></script>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">首页</a>
+  
+    <a href="/archives" class="mobile-nav-link">归档</a>
+  
+    <a href="/about" class="mobile-nav-link">关于</a>
+  
+</nav>
+    <img class="back-to-top-btn" src="/images/fly-to-top.png"/>
+<script>
+// Elevator script included on the page, already.
+window.onload = function() {
+  var elevator = new Elevator({
+    selector:'.back-to-top-btn',
+    element: document.querySelector('.back-to-top-btn'),
+    duration: 1000 // milliseconds
+  });
+}
+</script>
+      
+
+  
+    <script>
+      var cloudTieConfig = {
+        url: document.location.href, 
+        sourceId: "",
+        productKey: "e2fb4051c49842xxce669e634bc983f",
+        target: "cloud-tie-wrapper"
+      };
+    </script>
+    <script src="https://img1.ws.126.net/f2e/tie/yun/sdk/loader.js"></script>
+    
+
+  
+
+
+
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      })
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      })
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+ <script src="/js/is.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+<script src="/js/elevator.js"></script>
+  </div>
+</body>
+</html>
